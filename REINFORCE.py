@@ -30,10 +30,10 @@ class Net(nn.Module):
     def forward(self, x):
         h1 = F.relu(self.fc1(x))
         h2 = F.relu(self.fc2(h1))
-        policy = self.fc3(h2)
-        policy = F.softmax(policy, dim=1)
+        prob = self.fc3(h2)
+        prob = F.softmax(prob, dim=1)
 
-        return policy
+        return prob
 
 class Agent:
     def __init__(self, state_size, action_size):
@@ -43,7 +43,7 @@ class Agent:
 
     def get_action_prob(self, state):
         state = torch.from_numpy(state).float().unsqueeze(0) # state : [1, 4]
-        prob = self.net(Variable(state))
+        prob = self.net(state)
         action = prob.multinomial(num_samples=1)
         action = action.item()
         log_prob = torch.log(prob.squeeze(0)[action])
@@ -69,7 +69,7 @@ class Agent:
         for G_t, log_prob in zip(discounted_rewards, log_probs):
             loss.append(-log_prob * G_t)
         self.optimizer.zero_grad()
-        loss = torch.stack(loss).sum()
+        loss = torch.stack(loss).mean()
 
         loss.backward()
         self.optimizer.step()
