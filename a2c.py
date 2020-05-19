@@ -118,7 +118,6 @@ class Environment:
                     if step < args.max_steps:
                         reward = -100.0
 
-                if done:
                     next_v_value = 0.0
 
                 advantage, loss_critic = self.agent.update_critic(v_value, reward, next_v_value)
