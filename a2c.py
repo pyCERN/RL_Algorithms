@@ -29,10 +29,10 @@ class Actor(nn.Module):
     def forward(self, x):
         h1 = F.relu(self.fc1(x))
         h2 = F.relu(self.fc2(h1))
-        policy = self.fc3(h2)
-        policy = F.softmax(policy, dim=1)
+        prob = self.fc3(h2)
+        prob = F.softmax(prob, dim=1)
 
-        return policy
+        return prob
 
 class Critic(nn.Module):
     def __init__(self, n_in, n_mid):
@@ -53,8 +53,8 @@ class Agent:
         n_in, n_mid, n_out = state_size, 50, action_size
         self.actor = Actor(n_in, n_mid, n_out)
         self.critic = Critic(n_in, n_mid)
-        self.actor_optim = optim.Adam(self.actor.parameters(), lr=args.actor_lr)
-        self.critic_optim = optim.Adam(self.critic.parameters(), lr=args.critic_lr)
+        self.actor_optim = optim.Adam(self.actor.parameters(), lr=args.lr_actor)
+        self.critic_optim = optim.Adam(self.critic.parameters(), lr=args.lr_critic)
 
     def get_action_prob(self, state):
         state = torch.from_numpy(state).float().unsqueeze(0) # state : [1, 4]
@@ -82,7 +82,7 @@ class Agent:
         loss_critic.backward()
         self.critic_optim.step()
 
-        return advantage
+        return advantage, loss_critic.item()
 
     def update_actor(self, log_prob, advantage):
         loss_actor = -log_prob * advantage
@@ -103,7 +103,8 @@ class Environment:
     def run(self):
         for episode in range(args.max_eps):
             state = self.env.reset()
-            total_loss = 0
+            total_actor_loss = 0
+            total_critic_loss = 0
             total_reward = 0
 
             for step in range(args.max_steps):
@@ -120,18 +121,21 @@ class Environment:
                 if done:
                     next_v_value = 0.0
 
-                advantage = self.agent.update_critic(v_value, reward, next_v_value)
-                loss = self.agent.update_actor(log_prob, advantage)
+                advantage, loss_critic = self.agent.update_critic(v_value, reward, next_v_value)
+                loss_actor = self.agent.update_actor(log_prob, advantage)
                 state = next_state
-                total_loss += loss
+                total_actor_loss += loss_actor
+                total_critic_loss += loss_critic
                 total_reward += reward
 
                 if done:
                     break
 
-            print("Episode", episode, "||", "Cost", round(total_loss, 2), "||",  "Reward", round(total_reward, 2), "||","Steps", step+1)
+            print("Episode", episode, "||", "Actor loss", round(total_actor_loss, 2), "||", \
+                  "Critic loss", round(total_critic_loss, 2), "||", "Reward", round(total_reward, 2), "||","Steps", step+1)
             if episode % 10 == 0:
-                summary.add_scalar("loss", total_loss, episode)
+                summary.add_scalar("loss_actor", total_actor_loss, episode)
+                summary.add_scalar("loss_critic", total_critic_loss, episode)
                 summary.add_scalar("reward", total_reward, episode)
 
 env = Environment()
