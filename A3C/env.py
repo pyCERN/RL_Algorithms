@@ -9,8 +9,7 @@ class Environment:
         self.env = gym.make(args.env)
         state_size = self.env.observation_space.shape[0]
         action_size = self.env.action_space.n
-        self.workers = []
-        self.global_net = Agent(args, state_size, action_size)
+        self.agent = Agent(args, state_size, action_size)
 
     def run(self):
         for episode in range(self.args.max_eps):
@@ -20,7 +19,7 @@ class Environment:
             total_reward = 0
 
             for step in range(self.args.max_steps):
-                #self.env.render()
+                self.env.render()
                 action, log_prob = self.agent.get_action_prob(state)
                 next_state, reward, done, _ = self.env.step(action)
                 v_value = self.agent.get_v_value(state)
