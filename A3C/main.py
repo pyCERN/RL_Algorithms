@@ -6,6 +6,9 @@ import torch.nn as nn
 from agent import Agent
 from env import Environment
 
+'''
+Gradient Parallelism
+'''
 
 parser = argparse.ArgumentParser(description="a2c")
 parser.add_argument("--gamma", type=float, default=0.99, help="discount factor")
