@@ -1,7 +1,9 @@
 import gym
 import matplotlib.pyplot as plt
-from agent import Agent
+from agent import Agent, Worker
 
+
+num_workers = 2
 
 class Environment:
     def __init__(self, args):
@@ -9,7 +11,8 @@ class Environment:
         self.env = gym.make(args.env)
         state_size = self.env.observation_space.shape[0]
         action_size = self.env.action_space.n
-        self.agent = Agent(args, state_size, action_size)
+        self.global_net = Agent(args, state_size, action_size)
+        self.workers = [Worker(args, self.global_net, state_size, action_size) for _ in range(num_workers)]
 
     def run(self):
         for episode in range(self.args.max_eps):
