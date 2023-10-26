@@ -9,7 +9,8 @@ class Environment:
         self.env = gym.make(args.env)
         state_size = self.env.observation_space.shape[0]
         action_size = self.env.action_space.n
-        self.agent = Agent(args, state_size, action_size)
+        self.workers = []
+        self.global_net = Agent(args, state_size, action_size)
 
     def run(self):
         for episode in range(self.args.max_eps):
